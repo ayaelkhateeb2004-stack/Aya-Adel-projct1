@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Items Manager</title>
+
+<style>
+:root {
+  --main: #6c63ff;
+  --dark: #1f2933;
+  --light: #f4f6fb;
+  --gray: #e5e7eb;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: linear-gradient(135deg, var(--main), #4f46e5);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  background: white;
+  width: 480px;
+  padding: 25px;
+  border-radius: 14px;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+}
+
+h2, h3 {
+  text-align: center;
+  color: var(--dark);
+}
+
+.form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--gray);
+}
+
+button {
+  background: var(--main);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #4f46e5;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 25px;
+}
+
+li {
+  background: var(--light);
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+
+li button {
+  background: #ef4444;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+li button:hover {
+  background: #dc2626;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+th, td {
+  border: 1px solid var(--gray);
+  padding: 8px;
+  text-align: center;
+}
+
+th {
+  background: var(--light);
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>products</h2>
+
+  <div class="form">
+    <input type="text" id="name" placeholder="Enter item name">
+    <button onclick="add()">Add</button>
+  </div>
+
+  <!-- القائمة العادية -->
+  <ul id="list"></ul>
+
+  <!-- المنتجات المضافة حديثاً -->
+  <h3>المنتجات المضافة حديثاً</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>اسم المنتج</th>
+      </tr>
+    </thead>
+    <tbody id="recentTable"></tbody>
+  </table>
+</div>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+<script>
+const supabaseUrl = "https://kmoewzcneovrclwdsdoc.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imttb2V3emNuZW92cmNsd2RzZG9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNzc5OTUsImV4cCI6MjA4MTY1Mzk5NX0.4Z1B-octcQZFPFo8ryeumFKgy_gB14yqucUEetenS2w";
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+async function load() {
+  // كل المنتجات
+  const { data } = await supabaseClient
+    .from("products")
+    .select("*")
+    .order("id");
+
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  data.forEach(p => {
+    list.innerHTML += `
+      <li>
+        ${p.name}
+        <button onclick="remove(${p.id})">Delete</button>
+      </li>
+    `;
+  });
+
+  // أحدث المنتجات (مرتبة تنازليًا)
+  const { data: recent } = await supabaseClient
+    .from("products")
+    .select("*")
+    .order("id", { ascending: false });
+
+  const table = document.getElementById("recentTable");
+  table.innerHTML = "";
+
+  recent.forEach(item => {
+    table.innerHTML += `
+      <tr>
+        <td>${item.name}</td>
+      </tr>
+    `;
+  });
+}
+
+async function add() {
+  const name = document.getElementById("name").value;
+  if (!name) return;
+
+  await supabaseClient.from("products").insert({ name });
+  document.getElementById("name").value = "";
+  load();
+}
+
+async function remove(id) {
+  await supabaseClient.from("products").delete().eq("id", id);
+  load();
+}
+
+load();
+</script>
+
+</body>
+</html>
